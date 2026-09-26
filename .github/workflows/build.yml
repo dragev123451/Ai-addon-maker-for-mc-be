@@ -1,0 +1,37 @@
+name: Build Unsigned IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Force Disable Code Signing
+        run: |
+          mkdir -p Payload
+          xcodebuild build \
+            -project AddonAI.xcodeproj \
+            -scheme AddonAI \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CONFIGURATION_BUILD_DIR=$(pwd)/build
+
+      - name: Package Payload
+        run: |
+          mv build/AddonAI.app Payload/
+          zip -r AddonAI.ipa Payload/
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AddonAI-Unsigned-IPA
+          path: AddonAI.ipa
